@@ -19,5 +19,5 @@ gulp.task('bundle', () => {
         ignore: ['png'],
       })
     )
-    .pipe(gulp.dest('./dist'));
+    .pipe(gulp.dest('.'));
 });
