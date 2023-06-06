@@ -38,7 +38,7 @@ function useForm() {
   const [token, setToken] = React.useState('');
   const [expandNewValues, setExpandNewValues] = React.useState(false);
   const [needsReload, setNeedsReload] = React.useState(false);
-  const [showForm, setShowForm] = React.useState(false);
+  const [showForm, setShowForm] = React.useState(true);
   const [parsed, setParsed] = React.useState({});
 
   React.useEffect(() => {
@@ -67,7 +67,7 @@ function useForm() {
 
     // if (savedExpandNewValues) {
     setExpandNewValues(savedExpandNewValues === 'true');
-    setShowForm(savedShowForm === 'true');
+    setShowForm(savedShowForm !== 'false');
     // }
   }, []);
 
