@@ -17,7 +17,6 @@ function useForm() {
   const [url, setUrl] = React.useState('');
   const [appId, setAppId] = React.useState('');
   const [clientApiKey, setClientApiKey] = React.useState('');
-  const [userId, setUserId] = React.useState('');
   const [token, setToken] = React.useState('');
   const [expandNewValues, setExpandNewValues] = React.useState(false);
   const [needsReload, setNeedsReload] = React.useState(false);
@@ -27,7 +26,6 @@ function useForm() {
     const savedUrl = localStorage.getItem('url');
     const savedAppId = localStorage.getItem('appId');
     const savedClientApiKey = localStorage.getItem('clientApiKey');
-    const savedUserId = localStorage.getItem('userId');
     const savedToken = localStorage.getItem('token');
     const savedExpandNewValues = localStorage.getItem('expandNewValues');
 
@@ -39,9 +37,6 @@ function useForm() {
     }
     if (savedClientApiKey) {
       setClientApiKey(savedClientApiKey);
-    }
-    if (savedUserId) {
-      setUserId(savedUserId);
     }
 
     if (savedToken) {
@@ -82,13 +77,6 @@ function useForm() {
     localStorage.setItem('clientApiKey', newValue);
   };
 
-  const handleUserIdChange = (event) => {
-    const newValue = event.target.value;
-    setUserId(newValue);
-    setNeedsReload(true);
-    localStorage.setItem('userId', newValue);
-  };
-
   const handleUrlChange = (event) => {
     const newValue = event.target.value;
     setUrl(newValue);
@@ -100,14 +88,12 @@ function useForm() {
     url,
     appId,
     clientApiKey,
-    userId,
     token,
     expandNewValues,
     handleTokenChange,
     handleExpandNewValuesChange,
     handleAppIdChange,
     handleClientApiKeyChange,
-    handleUserIdChange,
     handleUrlChange,
     needsReload,
   };
