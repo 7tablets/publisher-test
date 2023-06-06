@@ -11,8 +11,26 @@ import {
 } from '@material-ui/core';
 import moment from 'moment';
 import './App.css';
+import { ArrowDownward, ArrowUpward, Refresh } from '@material-ui/icons';
 const publisherKitClient = new PublisherKitClient();
-
+function parseJwt(token) {
+  try {
+    var base64Url = token.split('.')[1];
+    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    var jsonPayload = decodeURIComponent(
+      window
+        .atob(base64)
+        .split('')
+        .map(function (c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return {};
+  }
+}
 function useForm() {
   const [url, setUrl] = React.useState('');
   const [appId, setAppId] = React.useState('');
@@ -20,6 +38,8 @@ function useForm() {
   const [token, setToken] = React.useState('');
   const [expandNewValues, setExpandNewValues] = React.useState(false);
   const [needsReload, setNeedsReload] = React.useState(false);
+  const [showForm, setShowForm] = React.useState(false);
+  const [parsed, setParsed] = React.useState({});
 
   React.useEffect(() => {
     // Load values from local storage on initial render
@@ -28,6 +48,7 @@ function useForm() {
     const savedClientApiKey = localStorage.getItem('clientApiKey');
     const savedToken = localStorage.getItem('token');
     const savedExpandNewValues = localStorage.getItem('expandNewValues');
+    const savedShowForm = localStorage.getItem('showForm');
 
     if (savedUrl) {
       setUrl(savedUrl);
@@ -41,23 +62,26 @@ function useForm() {
 
     if (savedToken) {
       setToken(savedToken);
+      setParsed(savedToken ? parseJwt(savedToken) : {});
     }
 
     // if (savedExpandNewValues) {
     setExpandNewValues(savedExpandNewValues === 'true');
+    setShowForm(savedShowForm === 'true');
     // }
   }, []);
 
   const handleTokenChange = (event) => {
     const newValue = event.target.value;
     setToken(newValue);
+    setParsed(token ? parseJwt(token) : {});
+
     setNeedsReload(true);
     localStorage.setItem('token', newValue);
   };
 
   const handleExpandNewValuesChange = (event) => {
     const newValue = event.target.checked;
-    console.log(newValue, typeof newValue);
     setExpandNewValues(!!newValue);
     // setNeedsReload(true);
     localStorage.setItem('expandNewValues', newValue ? 'true' : 'false');
@@ -84,17 +108,25 @@ function useForm() {
     localStorage.setItem('url', newValue);
   };
 
+  const handleSetShowForm = (bool) => {
+    setShowForm(bool);
+    localStorage.setItem('showForm', bool ? 'true' : 'false');
+  };
+
   return {
     url,
     appId,
     clientApiKey,
     token,
     expandNewValues,
+    showForm,
+    parsed,
     handleTokenChange,
     handleExpandNewValuesChange,
     handleAppIdChange,
     handleClientApiKeyChange,
     handleUrlChange,
+    handleSetShowForm,
     needsReload,
   };
 }
@@ -108,17 +140,19 @@ function App() {
     token,
     expandNewValues,
     needsReload,
+    showForm,
+    parsed,
     handleTokenChange,
     handleExpandNewValuesChange,
     handleAppIdChange,
     handleClientApiKeyChange,
     handleUrlChange,
+    handleSetShowForm,
   } = useForm();
   const [messageList, setMessageList] = React.useState([]);
   const [canConnect, setCanConnect] = React.useState(false);
   const addMessage = React.useCallback(
     (message) => {
-      console.log({ expandNewValues });
       setMessageList((mList) => [
         ...mList,
         {
@@ -142,41 +176,21 @@ function App() {
   };
 
   React.useEffect(() => {
-    // const urlParams = new URLSearchParams(window.location.search);
-    // // const env = urlParams.get('env');
-    // const token = urlParams.get('token');
-    // const clientApiKey = urlParams.get('clientApiKey');
-    // const appId = urlParams.get('appId');
-    // const url = decodeURIComponent(urlParams.get('url'));
-    // const ed = urlParams.get('expand') === 'true';
-    // setExpandDefault(ed);
     if (!token || !clientApiKey || !appId || !url) {
+      console.error(
+        'Please specify all required parameters, token, clientApiKey, appId, url. - expand is optional'
+      );
       return;
-      // alert(
-      //   'Please specify all required parameters, token, clientApiKey, appId, url. - expand is optional'
-      // );
     }
-    // let publisherUrl = 'http://localhost:3001';
-    // if (env === 'dev') {
-    //   publisherUrl = 'https://publisher-dev.seventablets.com';
-    // } else if (env === 'stg') {
-    //   publisherUrl = 'https://publisher-stg.seventablets.com';
-    // } else if (env === 'prod') {
-    //   publisherUrl = 'https://publisher.seventablets.com';
-    // }
-    // if (!url) {
-    //   alert('Invalid url. Please specify and encodeURIComponent "url" in the query parameter ');
-    // }
+
     const success = publisherKitClient.initialize({
       publisherUrl: url,
       clientApiKey: clientApiKey,
       appId: appId,
       appToken: token,
     });
-    // if (publisherKitClient.isConnected()) publisherKitClient.disconnect();
-    console.log('here', url, success);
+
     success && setCanConnect(true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, clientApiKey, appId, url]);
 
   React.useEffect(() => {
@@ -192,7 +206,6 @@ function App() {
         addMessage({ event, payload, type: 'message' });
       })
       .onDisconnect((reason) => {
-        // setMessageList([...messageList, { event: '!', payload: { reason } }]);
         addMessage({ event: 'Disconnected!', payload: { reason }, type: 'disconnect' });
       })
       .onError((errMsg) => {
@@ -201,38 +214,51 @@ function App() {
       });
 
     !publisherKitClient.isConnected() && publisherKitClient.connect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canConnect, addMessage]);
+
   return (
     <Container className="app">
-      <Card className="form">
-        <div className="formWrap">
-          <TextField label="url" value={url} onChange={handleUrlChange} />
-          <TextField label="appId" value={appId} onChange={handleAppIdChange} />
-          <TextField
-            label="clientApiKey"
-            value={clientApiKey}
-            onChange={handleClientApiKeyChange}
-          />
-          <TextField label="PubToken" value={token} onChange={handleTokenChange} />
+      <Button
+        variant="contained"
+        color="primary"
+        startIcon={!showForm ? <ArrowDownward /> : <ArrowUpward />}
+        label={showForm ? 'Hide Information' : 'Edit Information'}
+        onClick={() => handleSetShowForm(!showForm)}
+      >
+        {showForm ? 'Hide Information' : 'Edit Information'}
+      </Button>
 
-          <FormControlLabel
-            control={<Switch checked={expandNewValues} onChange={handleExpandNewValuesChange} />}
-            label="Expand New Events"
-          />
-          {needsReload ? (
-            <Button
-              variant="outlined"
-              color="primary"
-              label="Reload"
-              onClick={() => window.location.reload()}
-            >
-              Reload
-            </Button>
-          ) : null}
-        </div>
-      </Card>
+      {showForm ? (
+        <Card className="form">
+          <div className="formWrap">
+            <TextField label="url" value={url} onChange={handleUrlChange} />
+            <TextField label="appId" value={appId} onChange={handleAppIdChange} />
+            <TextField
+              label="clientApiKey"
+              value={clientApiKey}
+              onChange={handleClientApiKeyChange}
+            />
+            <TextField label="PubToken" value={token} onChange={handleTokenChange} />
 
+            <FormControlLabel
+              control={<Switch checked={expandNewValues} onChange={handleExpandNewValuesChange} />}
+              label="Expand New Events"
+            />
+            {needsReload ? (
+              <Button
+                variant="contained"
+                color="secondary"
+                startIcon={<Refresh />}
+                label="Reload"
+                onClick={() => window.location.reload()}
+              >
+                Reload
+              </Button>
+            ) : null}
+          </div>
+          <pre>{JSON.stringify(parsed, null, 2)}</pre>
+        </Card>
+      ) : null}
       {messageList
         .map((message, indx) => {
           return (

@@ -5,7 +5,9 @@
   background-color: #282c34;
   min-height: 100vh;
   min-width: 100vw;
+  overflow-y: auto;
 }
+
 
 p {
   margin: 0;
@@ -24,6 +26,14 @@ p {
   display: flex;
   flex-direction: column;
   padding: 10px;
+
+  background-color: transparent;
+}
+.form{
+  margin: 10px;
+  background-color: transparent;
+  flex-direction: row;
+  width: 100%;
 }
 
 .connect {
