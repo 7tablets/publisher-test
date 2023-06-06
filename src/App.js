@@ -1,18 +1,25 @@
 import React from 'react';
 import PublisherKitClient from '@7t/publisher-kit-client';
 import { Card, CardContent, Container } from '@material-ui/core';
-import InboxIcon from '@material-ui/icons/Inbox';
 import moment from 'moment';
 import './App.css';
+const publisherKitClient = new PublisherKitClient();
 function App() {
-  let expandDefault = false;
+  const [expandDefault, setExpandDefault] = React.useState(false);
   const [messageList, setMessageList] = React.useState([]);
-  const addMessage = React.useCallback((message) => {
-    setMessageList((mList) => [
-      ...mList,
-      { ...message, time: moment().format('dddd, MMMM Do YYYY, h:mm:ss a'), expand: expandDefault },
-    ]);
-  });
+  const addMessage = React.useCallback(
+    (message) => {
+      setMessageList((mList) => [
+        ...mList,
+        {
+          ...message,
+          time: moment().format('dddd, MMMM Do YYYY, h:mm:ss a'),
+          expand: expandDefault,
+        },
+      ]);
+    },
+    [expandDefault]
+  );
 
   const toggle = (message) => {
     const indx = messageList.findIndex((m) => m === message);
@@ -26,29 +33,39 @@ function App() {
 
   React.useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const env = urlParams.get('env');
+    // const env = urlParams.get('env');
     const token = urlParams.get('token');
     const clientApiKey = urlParams.get('clientApiKey');
     const appId = urlParams.get('appId');
-    expandDefault = urlParams.get('expand') === 'true';
-    let publisherUrl = 'http://localhost:3001';
-    if (env === 'dev') {
-      publisherUrl = 'https://publisher-dev.seventablets.com';
-    } else if (env === 'stg') {
-      publisherUrl = 'https://publisher-stg.seventablets.com';
-    } else if (env === 'prod') {
-      publisherUrl = 'https://publisher.seventablets.com';
+    const url = decodeURIComponent(urlParams.get('url'));
+    const ed = urlParams.get('expand') === 'true';
+    setExpandDefault(ed);
+    if (!token || !clientApiKey || !appId || !url) {
+      alert(
+        'Please specify all required parameters, token, clientApiKey, appId, url. - expand is optional'
+      );
     }
-
-    PublisherKitClient.initialize({
-      publisherUrl,
+    // let publisherUrl = 'http://localhost:3001';
+    // if (env === 'dev') {
+    //   publisherUrl = 'https://publisher-dev.seventablets.com';
+    // } else if (env === 'stg') {
+    //   publisherUrl = 'https://publisher-stg.seventablets.com';
+    // } else if (env === 'prod') {
+    //   publisherUrl = 'https://publisher.seventablets.com';
+    // }
+    if (!url) {
+      alert('Invalid url. Please specify and encodeURIComponent "url" in the query parameter ');
+    }
+    publisherKitClient.initialize({
+      publisherUrl: url,
       clientApiKey: clientApiKey,
       appId: appId,
       appToken: token,
     });
-    PublisherKitClient.onConnect(() => {
-      addMessage({ event: 'Connected!', type: 'connect' });
-    })
+    publisherKitClient
+      .onConnect(() => {
+        addMessage({ event: 'Connected!', type: 'connect' });
+      })
       .onMessage(({ event, payload }) => {
         addMessage({ event, payload, type: 'message' });
       })
@@ -61,6 +78,7 @@ function App() {
         console.error(errMsg);
       })
       .connect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return (
     <Container className="app">

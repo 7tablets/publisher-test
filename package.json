@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@7t/publisher-kit-client": "https://bitbucket.org/7Tablets/7t-publisher-kit-client.git",
+    "@7t/publisher-kit-client": "https://bitbucket.org/sayhey7t/7t-publisher-kit-client.git",
     "@material-ui/core": "^4.9.2",
     "@material-ui/icons": "^4.9.1",
     "@testing-library/jest-dom": "^4.2.4",
