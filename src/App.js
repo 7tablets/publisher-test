@@ -231,10 +231,10 @@ function App() {
       {showForm ? (
         <Card className="form">
           <div className="formWrap">
-            <TextField label="url" value={url} onChange={handleUrlChange} />
-            <TextField label="appId" value={appId} onChange={handleAppIdChange} />
+            <TextField label="PubUrl" value={url} onChange={handleUrlChange} />
+            <TextField label="PubAppId" value={appId} onChange={handleAppIdChange} />
             <TextField
-              label="clientApiKey"
+              label="PubClientApiKey"
               value={clientApiKey}
               onChange={handleClientApiKeyChange}
             />
