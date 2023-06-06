@@ -20,6 +20,12 @@ p {
   width: 80%;
 }
 
+.formWrap{
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+}
+
 .connect {
   background-color: #2196f3 !important;
 }
